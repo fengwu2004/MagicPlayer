@@ -17,42 +17,44 @@
 
 @interface FFmpegCodec() {
   
-  AVCodecContext *pCodecCtx;
+  AVFormatContext *_pFormatCtx;
+  AVCodecParameters *_pCodecCtxOrig;
+  AVCodecContext *_pCodecCtx;
+  AVFrame *_pFrame;
+  NSInteger _videoStream;
 }
+
+@property(nonatomic) NSURL *url;
 
 @end
 
 @implementation FFmpegCodec
 
-- (void)openVideo:(NSURL *)url {
+- (void)prepare {
   
-  const char* szUrl = [url.absoluteString cStringUsingEncoding:NSUTF8StringEncoding];
+  const char* szUrl = [self.url.absoluteString cStringUsingEncoding:NSUTF8StringEncoding];
   
-  AVFormatContext *pFormatCtx = NULL;
-  
-  if (avformat_open_input(&pFormatCtx, szUrl, NULL, NULL) != 0) {
+  if (avformat_open_input(&_pFormatCtx, szUrl, NULL, NULL) != 0) {
     
     return;
   }
   
-  if (avformat_find_stream_info(pFormatCtx, NULL) < 0) {
+  if (avformat_find_stream_info(_pFormatCtx, NULL) < 0) {
     
     return;
   }
   
-//  av_dump_format(pFormatCtx, 0, szUrl, 0);
+  AVCodecParameters *pCodecCtxOrig = NULL;
   
-  AVCodecContext *pCodecCtxOrig = NULL;
+  _videoStream = -1;
   
-  NSInteger videoStream = -1;
-  
-  for (NSInteger i = 0; i < pFormatCtx->nb_streams; ++i) {
+  for (NSInteger i = 0; i < _pFormatCtx->nb_streams; ++i) {
     
-    if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+    if (_pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
       
-      pCodecCtxOrig = pFormatCtx->streams[i]->codec;
+      pCodecCtxOrig = _pFormatCtx->streams[i]->codecpar;
       
-      videoStream = i;
+      _videoStream = i;
       
       break;
     }
@@ -70,65 +72,71 @@
     return;
   }
   
-  pCodecCtx = avcodec_alloc_context3(pCodec);
+  _pCodecCtx = avcodec_alloc_context3(pCodec);
   
-  if (pCodecCtx == NULL) {
+  if (_pCodecCtx == NULL) {
     
     return;
   }
   
-  if (avcodec_copy_context(pCodecCtx, pCodecCtxOrig) != 0) {
+  if (avcodec_parameters_to_context(_pCodecCtx, pCodecCtxOrig) != 0) {
     
     return;
   }
   
-  if (avcodec_open2(pCodecCtx, pCodec, NULL) < 0) {
+  if (avcodec_open2(_pCodecCtx, pCodec, NULL) < 0) {
     
     return;
   }
   
-  NSLog(@"xx");
+  _pFrame = av_frame_alloc();
+}
+
+- (void)openVideo:(NSURL *)url {
   
-  AVFrame *pFrame = av_frame_alloc();
+  self.url = url;
+  
+  [self prepare];
   
   dispatch_queue_t queue = dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0);
   
   dispatch_async(queue, ^{
     
-    NSInteger i = 0;
+    [self retriveFrame];
+  });
+}
+
+- (void)retriveFrame {
+  
+  NSInteger i = 0;
+  
+  AVPacket packet;
+  
+  while (av_read_frame(_pFormatCtx, &packet) >= 0) {
     
-    AVPacket packet;
-    
-    int frameFinished = 0;
-    
-    while (av_read_frame(pFormatCtx, &packet) >= 0) {
+    if (packet.stream_index == _videoStream) {
       
-      if (packet.stream_index == videoStream) {
+      avcodec_send_packet(_pCodecCtx, &packet);
+      
+      avcodec_receive_frame(_pCodecCtx, _pFrame);
+      
+      if ((_pCodecCtx->pix_fmt == AV_PIX_FMT_YUV420P || _pCodecCtx->pix_fmt == AV_PIX_FMT_YUVJ420P)) {
         
-        avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &packet);
-        
-        if (frameFinished && (pCodecCtx->pix_fmt == AV_PIX_FMT_YUV420P || pCodecCtx->pix_fmt == AV_PIX_FMT_YUVJ420P)) {
+        @autoreleasepool {
           
-          @autoreleasepool {
-            
-            [self saveFrame:pFrame width:pCodecCtx->width height:pCodecCtx->height frameId:i++];
-          }
+          [self saveFrame:_pFrame width:_pCodecCtx->width height:_pCodecCtx->height frameId:i++];
         }
       }
-      
-      av_packet_unref(&packet);
-      
-      av_frame_unref(pFrame);
     }
     
-    av_free(pFrame);
-    
-    avcodec_close(pCodecCtx);
-    
-    avcodec_close(pCodecCtxOrig);
-    
-    avformat_close_input(&pFormatCtx);
-  });
+    av_packet_unref(&packet);
+  }
+  
+  av_free(_pFrame);
+  
+  avcodec_close(_pCodecCtx);
+  
+  avformat_close_input(&_pFormatCtx);
 }
 
 static NSMutableData * copyFrameData(UInt8 *src, int linesize, int width, int height) {
