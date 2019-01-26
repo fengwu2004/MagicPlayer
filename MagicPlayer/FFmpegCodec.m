@@ -124,7 +124,7 @@
         
         @autoreleasepool {
           
-          [self saveFrame:_pFrame width:_pCodecCtx->width height:_pCodecCtx->height frameId:i++];
+          [self saveVideoFrame:_pFrame width:_pCodecCtx->width height:_pCodecCtx->height frameId:i++];
         }
       }
     }
@@ -159,7 +159,7 @@ static NSMutableData * copyFrameData(UInt8 *src, int linesize, int width, int he
   return md;
 }
 
-- (void)saveFrame:(AVFrame*)pFrame width:(int)width height:(int)height frameId:(NSInteger)frameId {
+- (void)saveVideoFrame:(AVFrame*)pFrame width:(int)width height:(int)height frameId:(NSInteger)frameId {
   
   if (pFrame->data[0] == 0) {
     
