@@ -13,6 +13,8 @@ class VideoPlayerView: UIView {
   
   var renderView:PlayerView!
   
+  var audioPlayer:AudioPlayer!
+  
   var deocodec = FFmpegCodec()
   
   var url:URL!
@@ -40,6 +42,8 @@ class VideoPlayerView: UIView {
   func play() -> Void {
     
     renderView.play()
+    
+    AudioPlayer.shared.play()
     
     DispatchQueue.global().async {
       

@@ -7,32 +7,81 @@
 //
 
 #import "AudioPlayer.h"
+#import "AudioFrame.h"
 #import <AudioToolbox/AudioToolbox.h>
 #import <Accelerate/Accelerate.h>
+#include <pthread.h>
 
-typedef void(^AieAudioManagerOutputBlock)(float * data, UInt32 numFrames, UInt32 numChannels);
+typedef void(^AudioManagerOutputBlock)(float * data, UInt32 numFrames, UInt32 numChannels);
 
 @interface AudioPlayer() {
   
   float *_outData;
+  pthread_mutex_t _mutex;
 }
 
 @property (nonatomic, assign) AudioComponentInstance audioUnit;
 @property (nonatomic, assign) AudioStreamBasicDescription outputFormat;
 @property (nonatomic) UInt32 numBytesPerSample;
 @property (nonatomic) UInt32 numOutputChannels;
-@property (nonatomic) NSMutableData * currentAudioFrame;
+@property (nonatomic) AudioFrame * currentAudioFrame;
 @property (nonatomic) NSUInteger currentAudioFramePos;
 @property (nonatomic) BOOL playing;
-@property (nonatomic, strong) AieAudioManagerOutputBlock outputBlock;
+@property (nonatomic, strong) AudioManagerOutputBlock outputBlock;
+@property (nonatomic) NSMutableArray *frames;
 
 @end
 
 @implementation AudioPlayer
 
+static AudioPlayer *_instance = nil;
+
++ (instancetype)shared {
+  
+  static dispatch_once_t onceToken;
+  
+  dispatch_once(&onceToken, ^{
+    
+    if (!_instance) {
+      
+      _instance = [[super allocWithZone:NULL] initPrivate];
+    }
+  });
+  
+  return _instance;
+}
+
++ (id)allocWithZone:(struct _NSZone *)zone {
+  
+  return [self shared];
+}
+
+- (id)copyWithZone:(NSZone *)zone {
+  
+  return self;
+}
+
+- (id)init {
+  
+  return self;
+}
+
+- (id)initPrivate {
+  
+  self = [super init];
+  
+  pthread_mutex_init(&_mutex, NULL);
+  
+  _outData = (float *)calloc(4096 * 2, sizeof(float));
+  
+  _frames = [[NSMutableArray alloc] init];
+  
+  return self;
+}
+
 - (BOOL)renderFrames:(UInt32)numFrames ioData:(AudioBufferList *)ioData {
   
-  for (int iBuffer = 0; iBuffer < ioData->mNumberBuffers; iBuffer++) {
+  for (int iBuffer = 0; iBuffer < ioData->mNumberBuffers; ++iBuffer) {
     
     memset(ioData->mBuffers[iBuffer].mData, 0, ioData->mBuffers[iBuffer].mDataByteSize);
   }
@@ -41,11 +90,9 @@ typedef void(^AieAudioManagerOutputBlock)(float * data, UInt32 numFrames, UInt32
     
     _outputBlock(_outData, numFrames, _numOutputChannels);
     
-    if (_numBytesPerSample == 2) {
+    if (_numBytesPerSample == 4) {
       
-      float scale = (float)INT16_MAX;
-      
-      vDSP_vsmul(_outData, 1, &scale, _outData, 1, numFrames * _numOutputChannels);
+      float zero = 0.0;
       
       for (int iBuffer = 0; iBuffer < ioData->mNumberBuffers; ++iBuffer) {
         
@@ -53,7 +100,7 @@ typedef void(^AieAudioManagerOutputBlock)(float * data, UInt32 numFrames, UInt32
         
         for (int iChannel = 0; iChannel < thisNumChannels; ++iChannel) {
           
-          vDSP_vfix16(_outData + iChannel, _numOutputChannels, (SInt16 *)ioData->mBuffers[iBuffer].mData+iChannel, thisNumChannels, numFrames);
+          vDSP_vsadd(_outData + iChannel, _numOutputChannels, &zero, (float *)ioData->mBuffers[iBuffer].mData, thisNumChannels, numFrames);
         }
       }
     }
@@ -64,9 +111,31 @@ typedef void(^AieAudioManagerOutputBlock)(float * data, UInt32 numFrames, UInt32
 
 - (void)audioCallbackFillData:(float *)outData numFrames:(UInt32)numFrames numChannels:(UInt32)numChannels {
   
-  const void *bytes = (Byte *)_currentAudioFrame.bytes + _currentAudioFramePos;
+  pthread_mutex_lock(&_mutex);
   
-  const NSUInteger bytesLeft = (_currentAudioFrame.length - _currentAudioFramePos);
+  if (_frames.count < 1) {
+    
+    _currentAudioFrame = nil;
+  }
+  else {
+    
+    _currentAudioFrame = _frames[0];
+    
+    [_frames removeObjectAtIndex:0];
+  }
+  
+  _currentAudioFramePos = 0;
+  
+  pthread_mutex_unlock(&_mutex);
+  
+  if (!_currentAudioFrame) {
+    
+    return;
+  }
+  
+  const void *bytes = (Byte *)_currentAudioFrame.samples.bytes + _currentAudioFramePos;
+  
+  const NSUInteger bytesLeft = (_currentAudioFrame.samples.length - _currentAudioFramePos);
   
   const NSUInteger frameSizeOf = numChannels * sizeof(float);
   
@@ -77,7 +146,7 @@ typedef void(^AieAudioManagerOutputBlock)(float * data, UInt32 numFrames, UInt32
   memcpy(outData, bytes, bytesToCopy);
   
   numFrames -= framesToCopy;
-  
+
   outData += framesToCopy * numChannels;
 }
 
@@ -149,15 +218,51 @@ typedef void(^AieAudioManagerOutputBlock)(float * data, UInt32 numFrames, UInt32
   }
   
   status = AudioOutputUnitStart(_audioUnit);
-  
+
   if (status == noErr) {
-    
+
     _playing = YES;
   }
   else {
-    
+
     _playing = NO;
   }
+}
+
+- (void)addFrame:(AVFrame*)pFrame audioTimeBase:(CGFloat)audioTimeBase {
+  
+  if (!pFrame || !pFrame->data[0]) {
+    
+    return;
+  }
+  
+  void *audioData = pFrame->data[0];
+  
+  NSInteger numFrames = pFrame->nb_samples;
+  
+  const NSUInteger numElements = numFrames * _numOutputChannels;
+  
+  NSMutableData *data = [NSMutableData dataWithLength:numElements * sizeof(float)];
+  
+  float scale = 1.0 / (float)INT16_MAX;
+  
+  vDSP_vflt16((SInt16 *)audioData, 1, data.mutableBytes, 1, numElements);
+  
+  vDSP_vsmul(data.mutableBytes, 1, &scale, data.mutableBytes, 1, numElements);
+  
+  AudioFrame *frame = [[AudioFrame alloc] init];
+  
+  frame.position = av_frame_get_best_effort_timestamp(pFrame) * audioTimeBase;
+  
+  frame.duration = av_frame_get_pkt_duration(pFrame) * audioTimeBase;
+  
+  frame.samples = data;
+  
+  pthread_mutex_lock(&_mutex);
+  
+  [_frames addObject:frame];
+  
+  pthread_mutex_unlock(&_mutex);
 }
 
 OSStatus renderCallback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags, const AudioTimeStamp *inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList * ioData) {

@@ -7,11 +7,18 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <FFmpeg/frame.h>
+#import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface AudioPlayer : NSObject
 
+@property (class, readonly, strong) AudioPlayer *shared;
+
+- (void)play;
+
+- (void)addFrame:(AVFrame*)pFrame audioTimeBase:(CGFloat)audioTimeBase;
 
 @end
 

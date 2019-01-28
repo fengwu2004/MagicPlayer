@@ -19,6 +19,7 @@
 		2C5C30FC21F884FA007710C7 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C5C30FB21F884FA007710C7 /* AppDelegate.swift */; };
 		2C5C312C21F99B52007710C7 /* VideoFrame.m in Sources */ = {isa = PBXBuildFile; fileRef = 2C5C312B21F99B52007710C7 /* VideoFrame.m */; };
 		2C5C312E21F99CE5007710C7 /* VideoManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C5C312D21F99CE5007710C7 /* VideoManager.swift */; };
+		2C5C33DE21FD9E1C00A6E46C /* AudioFrame.m in Sources */ = {isa = PBXBuildFile; fileRef = 2C5C33DD21FD9E1C00A6E46C /* AudioFrame.m */; };
 		2C8BCDDE21F9E75000C83B8B /* yuvFragment.fsh in Resources */ = {isa = PBXBuildFile; fileRef = 2C8BCDDC21F9E75000C83B8B /* yuvFragment.fsh */; };
 		2C8BCDDF21F9E75000C83B8B /* vertexShader.vsh in Resources */ = {isa = PBXBuildFile; fileRef = 2C8BCDDD21F9E75000C83B8B /* vertexShader.vsh */; };
 		2C8BCDE221F9E7B500C83B8B /* PlayerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 2C8BCDE121F9E7B500C83B8B /* PlayerView.m */; };
@@ -65,6 +66,8 @@
 		2C5C312A21F99B52007710C7 /* VideoFrame.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VideoFrame.h; sourceTree = "<group>"; };
 		2C5C312B21F99B52007710C7 /* VideoFrame.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VideoFrame.m; sourceTree = "<group>"; };
 		2C5C312D21F99CE5007710C7 /* VideoManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoManager.swift; sourceTree = "<group>"; };
+		2C5C33DC21FD9E1C00A6E46C /* AudioFrame.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AudioFrame.h; sourceTree = "<group>"; };
+		2C5C33DD21FD9E1C00A6E46C /* AudioFrame.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AudioFrame.m; sourceTree = "<group>"; };
 		2C8BCDDC21F9E75000C83B8B /* yuvFragment.fsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = yuvFragment.fsh; sourceTree = "<group>"; };
 		2C8BCDDD21F9E75000C83B8B /* vertexShader.vsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = vertexShader.vsh; sourceTree = "<group>"; };
 		2C8BCDE021F9E7B400C83B8B /* PlayerView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PlayerView.h; sourceTree = "<group>"; };
@@ -171,6 +174,8 @@
 				2C8BCDE121F9E7B500C83B8B /* PlayerView.m */,
 				2CBE687E21FC5D500000CBD3 /* AudioPlayer.h */,
 				2CBE687F21FC5D500000CBD3 /* AudioPlayer.m */,
+				2C5C33DC21FD9E1C00A6E46C /* AudioFrame.h */,
+				2C5C33DD21FD9E1C00A6E46C /* AudioFrame.m */,
 			);
 			path = MagicPlayer;
 			sourceTree = "<group>";
@@ -256,6 +261,7 @@
 				2CAAF7DC21E868AB008D6F47 /* MediaListViewController.swift in Sources */,
 				2CAAF7EF21E86B40008D6F47 /* MagicVideoCell.swift in Sources */,
 				2CAAF7EC21E86A01008D6F47 /* ShareViewController.swift in Sources */,
+				2C5C33DE21FD9E1C00A6E46C /* AudioFrame.m in Sources */,
 				2CBE688021FC5D500000CBD3 /* AudioPlayer.m in Sources */,
 				2C5C2FFF21F7490C007710C7 /* FFmpegCodec.m in Sources */,
 				2C5C30FC21F884FA007710C7 /* AppDelegate.swift in Sources */,
@@ -417,7 +423,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 				);
-				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/SDL/include";
+				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = MagicPlayer/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -427,8 +433,6 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/SDL",
-					"$(PROJECT_DIR)/SDL/include",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.yellfun.MagicPlayer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -451,7 +455,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 				);
-				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/SDL/include";
+				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = MagicPlayer/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -461,8 +465,6 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/SDL",
-					"$(PROJECT_DIR)/SDL/include",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.yellfun.MagicPlayer;
 				PRODUCT_NAME = "$(TARGET_NAME)";

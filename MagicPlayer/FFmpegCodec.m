@@ -9,6 +9,8 @@
 #import "FFmpegCodec.h"
 #import <FFmpeg/ffmpeg.h>
 #import "VideoFrame.h"
+#import "AudioFrame.h"
+#import "AudioPlayer.h"
 #import <UIKit/UIKit.h>
 #import "MagicPlayer-Swift.h"
 
@@ -19,9 +21,13 @@
   
   AVFormatContext *_pFormatCtx;
   AVCodecParameters *_pCodecCtxOrig;
-  AVCodecContext *_pCodecCtx;
-  AVFrame *_pFrame;
+  AVCodecContext *_pVideoCodecCtx;
+  AVCodecContext *_pAudioCodecCtx;
+  AVFrame *_pVideoFrame;
+  AVFrame *_pAudioFrame;
   NSInteger _videoStream;
+  NSInteger _audioStream;
+  CGFloat _audioTimeBase;
 }
 
 @property(nonatomic) NSURL *url;
@@ -29,6 +35,48 @@
 @end
 
 @implementation FFmpegCodec
+
+static void avStreamFPSTimeBase(AVStream *st, CGFloat defaultTimeBase, CGFloat *pFPS, CGFloat *pTimeBase) {
+  
+  CGFloat fps, timebase;
+  
+  if (st->time_base.den && st->time_base.num) {
+    
+    timebase = av_q2d(st->time_base);
+  }
+  else if(st->codec->time_base.den && st->codec->time_base.num) {
+    
+    timebase = av_q2d(st->codec->time_base);
+  }
+  else {
+    
+    timebase = defaultTimeBase;
+  }
+  
+  if (st->avg_frame_rate.den && st->avg_frame_rate.num) {
+    
+    fps = av_q2d(st->avg_frame_rate);
+  }
+  else if (st->r_frame_rate.den && st->r_frame_rate.num) {
+    
+    fps = av_q2d(st->r_frame_rate);
+  }
+  else {
+    
+    fps = 1.0 / timebase;
+  }
+  
+  if (pFPS) {
+    
+    *pFPS = fps;
+  }
+  
+  if (pTimeBase) {
+    
+    *pTimeBase = timebase;
+  }
+}
+
 
 - (void)prepare {
   
@@ -44,52 +92,95 @@
     return;
   }
   
-  AVCodecParameters *pCodecCtxOrig = NULL;
+  AVCodecParameters *pVideoCodecParam = NULL;
+  
+  AVCodecParameters *pAudioCodecParam = NULL;
   
   _videoStream = -1;
   
+  _audioStream = -1;
+  
   for (NSInteger i = 0; i < _pFormatCtx->nb_streams; ++i) {
     
-    if (_pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+    //video
+    if (_videoStream == -1 && _pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
       
-      pCodecCtxOrig = _pFormatCtx->streams[i]->codecpar;
+      pVideoCodecParam = _pFormatCtx->streams[i]->codecpar;
       
       _videoStream = i;
+    }
+    
+    //audio
+    if (_audioStream == -1 && _pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
       
-      break;
+      pAudioCodecParam = _pFormatCtx->streams[i]->codecpar;
+      
+      _audioStream = i;
     }
   }
   
-  if (pCodecCtxOrig == NULL) {
+  if (pVideoCodecParam == NULL) {
     
     return;
   }
   
-  AVCodec *pCodec = avcodec_find_decoder(pCodecCtxOrig->codec_id);
-  
-  if (pCodec == NULL) {
+  if (pAudioCodecParam == NULL) {
     
     return;
   }
   
-  _pCodecCtx = avcodec_alloc_context3(pCodec);
+  AVCodec *pVideoCodec = avcodec_find_decoder(pVideoCodecParam->codec_id);
   
-  if (_pCodecCtx == NULL) {
+  if (pVideoCodec == NULL) {
     
     return;
   }
   
-  if (avcodec_parameters_to_context(_pCodecCtx, pCodecCtxOrig) != 0) {
+  //video
+  _pVideoCodecCtx = avcodec_alloc_context3(pVideoCodec);
+  
+  if (_pVideoCodecCtx == NULL) {
     
     return;
   }
   
-  if (avcodec_open2(_pCodecCtx, pCodec, NULL) < 0) {
+  if (avcodec_parameters_to_context(_pVideoCodecCtx, pVideoCodecParam) != 0) {
     
     return;
   }
   
-  _pFrame = av_frame_alloc();
+  if (avcodec_open2(_pVideoCodecCtx, pVideoCodec, NULL) < 0) {
+    
+    return;
+  }
+  
+  _pVideoFrame = av_frame_alloc();
+  
+  //audio
+  AVCodec *pAudioCodec = avcodec_find_decoder(pAudioCodecParam->codec_id);
+  
+  if (!pAudioCodec) {
+    
+    return;
+  }
+  
+  _pAudioCodecCtx = avcodec_alloc_context3(pAudioCodec);
+  
+  if (avcodec_parameters_to_context(_pAudioCodecCtx, pAudioCodecParam) != 0) {
+    
+    return;
+  }
+  
+  if (avcodec_open2(_pAudioCodecCtx, pAudioCodec, NULL) < 0) {
+    
+    return;
+  }
+  
+  _pAudioFrame = av_frame_alloc();
+  
+  AVStream *st = _pFormatCtx->streams[_audioStream];
+  
+  avStreamFPSTimeBase(st, 0.025, 0, &_audioTimeBase);
 }
 
 - (void)openVideo:(NSURL *)url {
@@ -116,25 +207,41 @@
     
     if (packet.stream_index == _videoStream) {
       
-      avcodec_send_packet(_pCodecCtx, &packet);
+      avcodec_send_packet(_pVideoCodecCtx, &packet);
       
-      avcodec_receive_frame(_pCodecCtx, _pFrame);
+      avcodec_receive_frame(_pVideoCodecCtx, _pVideoFrame);
       
-      if ((_pCodecCtx->pix_fmt == AV_PIX_FMT_YUV420P || _pCodecCtx->pix_fmt == AV_PIX_FMT_YUVJ420P)) {
+      if ((_pVideoCodecCtx->pix_fmt == AV_PIX_FMT_YUV420P || _pVideoCodecCtx->pix_fmt == AV_PIX_FMT_YUVJ420P)) {
         
         @autoreleasepool {
           
-          [self saveVideoFrame:_pFrame width:_pCodecCtx->width height:_pCodecCtx->height frameId:i++];
+          [self saveVideoFrame:_pVideoFrame width:_pVideoCodecCtx->width height:_pVideoCodecCtx->height frameId:i++];
         }
+      }
+    }
+    
+    if (packet.stream_index == _audioStream) {
+      
+      avcodec_send_packet(_pAudioCodecCtx, &packet);
+      
+      avcodec_receive_frame(_pAudioCodecCtx, _pAudioFrame);
+      
+      @autoreleasepool {
+        
+        [self saveAudioFrame:_pAudioFrame];
       }
     }
     
     av_packet_unref(&packet);
   }
   
-  av_free(_pFrame);
+  av_free(_pVideoFrame);
   
-  avcodec_close(_pCodecCtx);
+  av_free(_pAudioFrame);
+  
+  avcodec_close(_pVideoCodecCtx);
+  
+  avcodec_close(_pAudioCodecCtx);
   
   avformat_close_input(&_pFormatCtx);
 }
@@ -183,6 +290,18 @@ static NSMutableData * copyFrameData(UInt8 *src, int linesize, int width, int he
   frame.height = height;
 
   [[VideoManager shared] addFrame:frame];
+}
+
+- (void)saveAudioFrame:(AVFrame*)pFrame {
+  
+  if (pFrame->data[0] == 0) {
+    
+    printf("ignore");
+    
+    return;
+  }
+  
+  [[AudioPlayer shared] addFrame:pFrame audioTimeBase:_audioTimeBase];
 }
 
 @end

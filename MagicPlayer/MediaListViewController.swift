@@ -27,9 +27,9 @@ class MediaListViewController: UIViewController, UITableViewDelegate, UITableVie
   
   func setupVideoTable() -> Void {
     
-    videoTable.sectionHeaderHeight = 0.01
+    videoTable.rowHeight = 100
     
-    videoTable.sectionFooterHeight = 0.01
+    videoTable.estimatedSectionHeaderHeight = 0
     
     videoTable.register(UINib(nibName: "MagicVideoCell", bundle: nil), forCellReuseIdentifier: cellIdentifier)
   }
@@ -70,11 +70,6 @@ class MediaListViewController: UIViewController, UITableViewDelegate, UITableVie
   func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
     
     return 0.01
-  }
-  
-  func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-    
-    return 100
   }
   
   func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
