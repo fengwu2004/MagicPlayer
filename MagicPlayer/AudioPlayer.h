@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)play;
 
-- (void)addFrame:(AVFrame*)pFrame audioTimeBase:(CGFloat)audioTimeBase;
+- (void)addFrame:(AVFrame*)pFrame size:(int)data_size;
 
 @end
 

@@ -20,7 +20,6 @@
 @interface FFmpegCodec() {
   
   AVFormatContext *_pFormatCtx;
-  AVCodecParameters *_pCodecCtxOrig;
   AVCodecContext *_pVideoCodecCtx;
   AVCodecContext *_pAudioCodecCtx;
   AVFrame *_pVideoFrame;
@@ -77,7 +76,6 @@ static void avStreamFPSTimeBase(AVStream *st, CGFloat defaultTimeBase, CGFloat *
   }
 }
 
-
 - (void)prepare {
   
   const char* szUrl = [self.url.absoluteString cStringUsingEncoding:NSUTF8StringEncoding];
@@ -121,10 +119,14 @@ static void avStreamFPSTimeBase(AVStream *st, CGFloat defaultTimeBase, CGFloat *
   
   if (pVideoCodecParam == NULL) {
     
+    NSLog(@"视频解码失败");
+    
     return;
   }
   
   if (pAudioCodecParam == NULL) {
+    
+    NSLog(@"音频解码失败");
     
     return;
   }
@@ -301,7 +303,11 @@ static NSMutableData * copyFrameData(UInt8 *src, int linesize, int width, int he
     return;
   }
   
-  [[AudioPlayer shared] addFrame:pFrame audioTimeBase:_audioTimeBase];
+  printf("%d %d %d \n", pFrame->format, (int)pFrame->channel_layout, pFrame->channels);
+  
+  int data_size = av_samples_get_buffer_size(NULL, _pAudioCodecCtx->channels, pFrame->nb_samples, _pAudioCodecCtx->sample_fmt, 1);
+  
+  [[AudioPlayer shared] addFrame:pFrame size:data_size];
 }
 
 @end

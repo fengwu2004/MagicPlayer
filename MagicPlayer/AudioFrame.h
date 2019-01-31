@@ -13,10 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface AudioFrame : NSObject
 
-@property (nonatomic) NSData *samples;
-@property (nonatomic) CGFloat position;
-@property (nonatomic) CGFloat duration;
-
+@property (nonatomic) NSData *leftsamples;
+@property (nonatomic) NSData *rightsamples;
 
 @end
 

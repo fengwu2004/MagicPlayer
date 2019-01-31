@@ -338,7 +338,7 @@ static void mat4f_LoadOrtho(float left, float right, float bottom, float top, fl
   
   _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(render)];
   
-  _displayLink.preferredFramesPerSecond = 48 * 4;
+  _displayLink.preferredFramesPerSecond = 24;
   
   _playThread = [[NSThread alloc] initWithBlock:^{
     
