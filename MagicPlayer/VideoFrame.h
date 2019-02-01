@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <CoreImage/CoreImage.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,6 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic) NSMutableData *chromaR;
 @property(nonatomic) NSInteger width;
 @property(nonatomic) NSInteger height;
+@property(nonatomic) CIImage *img;
 
 @end
 

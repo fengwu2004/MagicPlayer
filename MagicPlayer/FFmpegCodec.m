@@ -246,8 +246,6 @@ static void avStreamFPSTimeBase(AVStream *st, CGFloat defaultTimeBase, CGFloat *
   avcodec_close(_pAudioCodecCtx);
   
   avformat_close_input(&_pFormatCtx);
-  
-  sws_freeContext(_img_convert_ctx);
 }
 
 static NSMutableData * copyFrameData(UInt8 *src, int linesize, int width, int height) {
@@ -270,6 +268,20 @@ static NSMutableData * copyFrameData(UInt8 *src, int linesize, int width, int he
   return md;
 }
 
+void doCopy(UInt8 *dst, UInt8 *src, int linesize, int width, int height) {
+  
+  width = MIN(linesize, width);
+  
+  for (NSUInteger i = 0; i < height; ++i) {
+    
+    memcpy(dst, src, width);
+    
+    dst += width;
+    
+    src += linesize;
+  }
+}
+
 - (void)saveVideoFrame:(AVFrame*)pFrame width:(int)width height:(int)height frameId:(NSInteger)frameId {
   
   if (pFrame->data[0] == 0) {
@@ -283,39 +295,31 @@ static NSMutableData * copyFrameData(UInt8 *src, int linesize, int width, int he
   
   frame.frameId = frameId;
   
-  frame.luma = copyFrameData(pFrame->data[0], pFrame->linesize[0], width, height);
-  
-  frame.chromaB = copyFrameData(pFrame->data[1], pFrame->linesize[1], width >> 1, height >> 1);
-  
-  frame.chromaR = copyFrameData(pFrame->data[2], pFrame->linesize[2], width >> 1, height >> 1);
-  
-  CFDictionaryRef empty;
-  
-  CFMutableDictionaryRef attrs;
-  
-  CFDictionarySetValue(attrs, kCVPixelBufferIOSurfacePropertiesKey, empty);
+  NSDictionary *pixelAttributes = @{(id)kCVPixelBufferIOSurfacePropertiesKey : @{}};
   
   CVPixelBufferRef pixelBuffer = NULL;
   
-  CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_420YpCbCr8Planar, attrs, &pixelBuffer);
+  CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_420YpCbCr8Planar, (__bridge CFDictionaryRef _Nullable)(pixelAttributes), &pixelBuffer);
   
-  CVPixelBufferLockBaseAddress(pixelBuffer,0);
+  CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
   
   unsigned char *yDestPlane = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0);
   
-  memcpy(yDestPlane, pFrame->data[0], width * height);
+  doCopy(yDestPlane, pFrame->data[0], pFrame->linesize[0], width, height);
   
   unsigned char *uDestPlane = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 1);
   
-  memcpy(uDestPlane, pFrame->data[1], width * height >> 2);
+  doCopy(uDestPlane, pFrame->data[1], pFrame->linesize[1], width >> 1, height >> 1);
   
   unsigned char *vDestPlane = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 2);
   
-  memcpy(vDestPlane, pFrame->data[2], width * height >> 2);
+  doCopy(vDestPlane, pFrame->data[2], pFrame->linesize[2], width >> 1, height >> 1);
+  
+  CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
   
   CIImage *img = [[CIImage alloc] initWithCVPixelBuffer:pixelBuffer];
   
-  
+  frame.img = img;
   
   frame.width = width;
   
