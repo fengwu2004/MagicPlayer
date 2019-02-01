@@ -246,6 +246,8 @@ static void avStreamFPSTimeBase(AVStream *st, CGFloat defaultTimeBase, CGFloat *
   avcodec_close(_pAudioCodecCtx);
   
   avformat_close_input(&_pFormatCtx);
+  
+  sws_freeContext(_img_convert_ctx);
 }
 
 static NSMutableData * copyFrameData(UInt8 *src, int linesize, int width, int height) {
@@ -286,6 +288,34 @@ static NSMutableData * copyFrameData(UInt8 *src, int linesize, int width, int he
   frame.chromaB = copyFrameData(pFrame->data[1], pFrame->linesize[1], width >> 1, height >> 1);
   
   frame.chromaR = copyFrameData(pFrame->data[2], pFrame->linesize[2], width >> 1, height >> 1);
+  
+  CFDictionaryRef empty;
+  
+  CFMutableDictionaryRef attrs;
+  
+  CFDictionarySetValue(attrs, kCVPixelBufferIOSurfacePropertiesKey, empty);
+  
+  CVPixelBufferRef pixelBuffer = NULL;
+  
+  CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_420YpCbCr8Planar, attrs, &pixelBuffer);
+  
+  CVPixelBufferLockBaseAddress(pixelBuffer,0);
+  
+  unsigned char *yDestPlane = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0);
+  
+  memcpy(yDestPlane, pFrame->data[0], width * height);
+  
+  unsigned char *uDestPlane = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 1);
+  
+  memcpy(uDestPlane, pFrame->data[1], width * height >> 2);
+  
+  unsigned char *vDestPlane = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 2);
+  
+  memcpy(vDestPlane, pFrame->data[2], width * height >> 2);
+  
+  CIImage *img = [[CIImage alloc] initWithCVPixelBuffer:pixelBuffer];
+  
+  
   
   frame.width = width;
   
