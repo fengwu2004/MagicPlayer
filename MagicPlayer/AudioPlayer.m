@@ -206,7 +206,7 @@ static AudioPlayer *_instance = nil;
   
   void *audioData = pFrame->data[0];
   
-  printf("%d\n", pFrame->nb_samples);
+//  printf("%d\n", pFrame->nb_samples);
 
   NSMutableData *ldata = [NSMutableData dataWithLength:pFrame->nb_samples * 4];
   

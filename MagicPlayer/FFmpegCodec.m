@@ -303,7 +303,7 @@ static NSMutableData * copyFrameData(UInt8 *src, int linesize, int width, int he
     return;
   }
   
-  printf("%d %d %d \n", pFrame->format, (int)pFrame->channel_layout, pFrame->channels);
+//  printf("%d %d %d \n", pFrame->format, (int)pFrame->channel_layout, pFrame->channels);
   
   int data_size = av_samples_get_buffer_size(NULL, _pAudioCodecCtx->channels, pFrame->nb_samples, _pAudioCodecCtx->sample_fmt, 1);
   

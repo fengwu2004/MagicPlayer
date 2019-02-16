@@ -15,6 +15,16 @@ class PlayerViewController: UIViewController {
   
   var playerView:VideoPlayerView!
   
+  @IBOutlet weak var preBtn:UIButton!
+  
+  @IBOutlet weak var nextBtn:UIButton!
+  
+  @IBOutlet weak var pauseBtn:UIButton!
+  
+  @IBOutlet weak var playBtn:UIButton!
+  
+  @IBOutlet weak var playProgress:UISlider!
+  
   override func viewDidLoad() {
     
     super.viewDidLoad()
@@ -23,11 +33,13 @@ class PlayerViewController: UIViewController {
     
     playerView.translatesAutoresizingMaskIntoConstraints = false
     
-    view.addSubview(playerView)
+    view.insertSubview(playerView, at: 0)
     
     view.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[playerView]|", options: [], metrics: nil, views: ["playerView" : playerView]))
     
     view.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[playerView]|", options: [], metrics: nil, views: ["playerView" : playerView]))
+    
+    playProgress.addTarget(self, action: #selector(updatePlaybackPos(_:)), for: UIControl.Event.valueChanged)
   }
   
   override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
@@ -40,5 +52,11 @@ class PlayerViewController: UIViewController {
     super.viewDidAppear(animated)
     
     playerView.play()
+  }
+  
+  @objc
+  func updatePlaybackPos(_ sender:UISlider) -> Void {
+    
+    
   }
 }
