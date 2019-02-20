@@ -281,6 +281,39 @@ static NSMutableData * copyFrameData(UInt8 *src, int linesize, int width, int he
   
   frame.frameId = frameId;
   
+  CVPixelBufferRef pixelBuffer = NULL;
+  
+  CFMutableDictionaryRef attrs = CFDictionaryCreateMutable(kCFAllocatorDefault, 1, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+  
+  CFDictionaryRef empty = CFDictionaryCreate(kCFAllocatorDefault, NULL, NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+  
+  CFDictionarySetValue(attrs, kCVPixelBufferIOSurfacePropertiesKey, empty);
+  
+  CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_420YpCbCr8BiPlanarFullRange, attrs, &pixelBuffer);
+  
+  CVPixelBufferLockBaseAddress(pixelBuffer, 0);
+  
+  uint8_t *yDestPlane = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0);
+  
+  memcpy(yDestPlane, pFrame->data[0], width * height);
+  
+  uint8_t *uvDestPlane = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 1);
+  
+  NSInteger numberOfElementsForChroma = (width >> 1) * (height >> 1);
+  
+  for (int i = 0, j = 0; i < numberOfElementsForChroma * 2; ++j) {
+    
+    uvDestPlane[i] = (pFrame->data[1])[j];
+    
+    uvDestPlane[i + 1] = (pFrame->data[2])[j];
+    
+    i += 2;
+  }
+  
+  CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
+  
+  CIImage *coreImage = [CIImage imageWithCVPixelBuffer:pixelBuffer];
+  
   frame.luma = copyFrameData(pFrame->data[0], pFrame->linesize[0], width, height);
   
   frame.chromaB = copyFrameData(pFrame->data[1], pFrame->linesize[1], width >> 1, height >> 1);
