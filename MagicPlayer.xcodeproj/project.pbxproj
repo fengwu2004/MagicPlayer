@@ -33,6 +33,7 @@
 		2CAAF7F021E86B40008D6F47 /* MagicVideoCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 2CAAF7EE21E86B40008D6F47 /* MagicVideoCell.xib */; };
 		2CAAF7F321E8893C008D6F47 /* PlayerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CAAF7F121E8893C008D6F47 /* PlayerViewController.swift */; };
 		2CAAF7F421E8893C008D6F47 /* PlayerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 2CAAF7F221E8893C008D6F47 /* PlayerViewController.xib */; };
+		2CB9FA012222ABF800BDD7BF /* FrameGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = 2CB9FA002222ABF800BDD7BF /* FrameGenerator.m */; };
 		2CBE688021FC5D500000CBD3 /* AudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 2CBE687F21FC5D500000CBD3 /* AudioPlayer.m */; };
 /* End PBXBuildFile section */
 
@@ -84,6 +85,8 @@
 		2CAAF7EE21E86B40008D6F47 /* MagicVideoCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MagicVideoCell.xib; sourceTree = "<group>"; };
 		2CAAF7F121E8893C008D6F47 /* PlayerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerViewController.swift; sourceTree = "<group>"; };
 		2CAAF7F221E8893C008D6F47 /* PlayerViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PlayerViewController.xib; sourceTree = "<group>"; };
+		2CB9F9FF2222ABF800BDD7BF /* FrameGenerator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FrameGenerator.h; sourceTree = "<group>"; };
+		2CB9FA002222ABF800BDD7BF /* FrameGenerator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FrameGenerator.m; sourceTree = "<group>"; };
 		2CBE687E21FC5D500000CBD3 /* AudioPlayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AudioPlayer.h; sourceTree = "<group>"; };
 		2CBE687F21FC5D500000CBD3 /* AudioPlayer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AudioPlayer.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -176,6 +179,8 @@
 				2CBE687F21FC5D500000CBD3 /* AudioPlayer.m */,
 				2C5C33DC21FD9E1C00A6E46C /* AudioFrame.h */,
 				2C5C33DD21FD9E1C00A6E46C /* AudioFrame.m */,
+				2CB9F9FF2222ABF800BDD7BF /* FrameGenerator.h */,
+				2CB9FA002222ABF800BDD7BF /* FrameGenerator.m */,
 			);
 			path = MagicPlayer;
 			sourceTree = "<group>";
@@ -259,6 +264,7 @@
 			files = (
 				2C8BCDE221F9E7B500C83B8B /* PlayerView.m in Sources */,
 				2CAAF7DC21E868AB008D6F47 /* MediaListViewController.swift in Sources */,
+				2CB9FA012222ABF800BDD7BF /* FrameGenerator.m in Sources */,
 				2CAAF7EF21E86B40008D6F47 /* MagicVideoCell.swift in Sources */,
 				2CAAF7EC21E86A01008D6F47 /* ShareViewController.swift in Sources */,
 				2C5C33DE21FD9E1C00A6E46C /* AudioFrame.m in Sources */,
