@@ -7,13 +7,13 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <QuartzCore/QuartzCore.h>
+#import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface FrameGenerator : NSObject
 
-- (CGImageRef)getFrameThumbnail:(NSURL*)url atTime:(NSInteger)time;
+- (UIImage*)getFrameThumbnail:(NSURL*)url atTime:(NSInteger)time;
 
 @end
 

@@ -8,6 +8,7 @@
 
 #import "FrameGenerator.h"
 #import <FFmpeg/ffmpeg.h>
+#import <UIKit/UIKit.h>
 #import <CoreImage/CoreImage.h>
 
 static CIContext *cicontext = nil;
@@ -78,11 +79,13 @@ static CIContext *cicontext = nil;
   _pVideoFrame = av_frame_alloc();
 }
 
-- (CGImageRef)getFrameThumbnail:(NSURL*)url atTime:(NSInteger)time {
+- (UIImage*)getFrameThumbnail:(NSURL*)url atTime:(NSInteger)time {
   
   [self prepare];
   
   AVPacket packet;
+  
+  UIImage *img = nil;
   
   while (av_read_frame(_pFormatCtx, &packet) >= 0) {
     
@@ -96,7 +99,7 @@ static CIContext *cicontext = nil;
         
         @autoreleasepool {
           
-          [self saveVideoFrame:_pVideoFrame width:_pVideoCodecCtx->width height:_pVideoCodecCtx->height];
+          img = [self saveVideoFrame:_pVideoFrame width:_pVideoCodecCtx->width height:_pVideoCodecCtx->height];
         }
       }
       
@@ -110,10 +113,10 @@ static CIContext *cicontext = nil;
   
   av_free(_pVideoFrame);
   
-  return nil;
+  return img;
 }
 
-- (void)saveVideoFrame:(AVFrame*)pFrame width:(int)width height:(int)height {
+- (UIImage*)saveVideoFrame:(AVFrame*)pFrame width:(int)width height:(int)height {
   
   CVPixelBufferRef pixelBuffer = NULL;
   
@@ -148,11 +151,20 @@ static CIContext *cicontext = nil;
   
   CIImage *ciimage = [CIImage imageWithCVPixelBuffer:pixelBuffer];
   
-  CIContext *context = [[self class] context];
+  NSURL *url = [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
   
-  CGImageRef cgimage = [context createCGImage:ciimage fromRect:ciimage.extent];
+  NSURL *imgurl = [url URLByAppendingPathComponent:@"abd.jpeg"];
   
+  UIImage *uiimg = [UIImage imageWithCIImage:ciimage];
   
+  dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+    
+    NSData *imageData = UIImageJPEGRepresentation(uiimg, 1);
+    
+    [imageData writeToURL:imgurl atomically:YES];
+  });
+  
+  return uiimg;
 }
 
 @end
