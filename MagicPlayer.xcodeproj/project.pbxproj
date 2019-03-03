@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2C4DEF16222BBB1D00FD93F1 /* TouchEnableOfClipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C4DEF15222BBB1D00FD93F1 /* TouchEnableOfClipView.swift */; };
 		2C5C2FE721F739A3007710C7 /* FFmpeg.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C5C2FE621F739A3007710C7 /* FFmpeg.framework */; };
 		2C5C2FE921F739B6007710C7 /* FFmpeg.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2C5C2FE621F739A3007710C7 /* FFmpeg.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		2C5C2FF021F73A99007710C7 /* libbz2.1.0.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C5C2FEF21F73A99007710C7 /* libbz2.1.0.tbd */; };
@@ -51,6 +52,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2C4DEF15222BBB1D00FD93F1 /* TouchEnableOfClipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TouchEnableOfClipView.swift; sourceTree = "<group>"; };
 		2C5C2FE621F739A3007710C7 /* FFmpeg.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = FFmpeg.framework; sourceTree = "<group>"; };
 		2C5C2FEB21F73A85007710C7 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		2C5C2FED21F73A8E007710C7 /* libbz2.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libbz2.tbd; path = usr/lib/libbz2.tbd; sourceTree = SDKROOT; };
@@ -181,6 +183,7 @@
 				2C5C33DD21FD9E1C00A6E46C /* AudioFrame.m */,
 				2CB9F9FF2222ABF800BDD7BF /* FrameGenerator.h */,
 				2CB9FA002222ABF800BDD7BF /* FrameGenerator.m */,
+				2C4DEF15222BBB1D00FD93F1 /* TouchEnableOfClipView.swift */,
 			);
 			path = MagicPlayer;
 			sourceTree = "<group>";
@@ -270,6 +273,7 @@
 				2C5C33DE21FD9E1C00A6E46C /* AudioFrame.m in Sources */,
 				2CBE688021FC5D500000CBD3 /* AudioPlayer.m in Sources */,
 				2C5C2FFF21F7490C007710C7 /* FFmpegCodec.m in Sources */,
+				2C4DEF16222BBB1D00FD93F1 /* TouchEnableOfClipView.swift in Sources */,
 				2C5C30FC21F884FA007710C7 /* AppDelegate.swift in Sources */,
 				2CAAF7F321E8893C008D6F47 /* PlayerViewController.swift in Sources */,
 				2C5C312E21F99CE5007710C7 /* VideoManager.swift in Sources */,

@@ -27,36 +27,19 @@ class MagicVideoCell: UITableViewCell {
     super.setSelected(selected, animated: animated)
   }
   
-  func getVideoThumb(_ url:URL) -> UIImage? {
-    
-    let asset = AVURLAsset(url: url)
-    
-    let gen = AVAssetImageGenerator(asset: asset)
-    
-    gen.appliesPreferredTrackTransform = true
-    
-    let time = CMTimeMakeWithSeconds(100, preferredTimescale: 600)
-    
-    if let img = try? gen.copyCGImage(at: time, actualTime: nil) {
-      
-      let thumb = UIImage(cgImage: img)
-      
-      return thumb
-    }
-    
-    return nil
-  }
-  
   func setVideoInfo(_ url:URL) -> Void {
+    
+    self.name.text = url.lastPathComponent
     
     DispatchQueue.global().async {
       
-      if let img = self.getVideoThumb(url) {
+      let frameGenerator = FrameGenerator()
+      
+      let img = frameGenerator.getFrameThumbnail(url, atTime: 0)
+
+      DispatchQueue.main.async {
         
-        DispatchQueue.main.async {
-        
-          self.thummnail.image = img
-        }
+        self.thummnail.image = img
       }
     }
   }

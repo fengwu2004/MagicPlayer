@@ -18,7 +18,7 @@ static CIContext *cicontext = nil;
   AVFormatContext *_pFormatCtx;
   AVCodecContext *_pVideoCodecCtx;
   AVFrame *_pVideoFrame;
-  int _videoStream;
+  NSInteger _videoStream;
 }
 
 @property (nonatomic) NSURL *url;
@@ -55,10 +55,34 @@ static CIContext *cicontext = nil;
   
   AVCodecParameters *pVideoCodecParam = NULL;
   
-  AVCodec *pVideoCodec = NULL;
+  _videoStream = -1;
   
-  _videoStream = av_find_best_stream(_pFormatCtx, AVMEDIA_TYPE_VIDEO, -1, -1, &pVideoCodec, 0);
+  for (NSInteger i = 0; i < _pFormatCtx->nb_streams; ++i) {
+    
+    //video
+    if (_videoStream == -1 && _pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+      
+      pVideoCodecParam = _pFormatCtx->streams[i]->codecpar;
+      
+      _videoStream = i;
+    }
+  }
   
+  if (pVideoCodecParam == NULL) {
+    
+    NSLog(@"视频解码失败");
+    
+    return;
+  }
+  
+  AVCodec *pVideoCodec = avcodec_find_decoder(pVideoCodecParam->codec_id);
+  
+  if (pVideoCodec == NULL) {
+    
+    return;
+  }
+  
+  //video
   _pVideoCodecCtx = avcodec_alloc_context3(pVideoCodec);
   
   if (_pVideoCodecCtx == NULL) {
@@ -81,6 +105,8 @@ static CIContext *cicontext = nil;
 
 - (UIImage*)getFrameThumbnail:(NSURL*)url atTime:(NSInteger)time {
   
+  self.url = url;
+  
   [self prepare];
   
   AVPacket packet;
@@ -95,23 +121,29 @@ static CIContext *cicontext = nil;
       
       avcodec_receive_frame(_pVideoCodecCtx, _pVideoFrame);
       
-      if ((_pVideoCodecCtx->pix_fmt == AV_PIX_FMT_YUV420P || _pVideoCodecCtx->pix_fmt == AV_PIX_FMT_YUVJ420P)) {
+      NSLog(@"%d", _pVideoCodecCtx->pix_fmt);
+      
+      if ((_pVideoCodecCtx->pix_fmt == AV_PIX_FMT_YUV420P || _pVideoCodecCtx->pix_fmt == AV_PIX_FMT_YUVJ420P) && _pVideoCodecCtx->width != 0 && _pVideoCodecCtx->height != 0 && _pVideoFrame->data[0] != NULL) {
         
         @autoreleasepool {
           
           img = [self saveVideoFrame:_pVideoFrame width:_pVideoCodecCtx->width height:_pVideoCodecCtx->height];
         }
+        
+        break;
       }
-      
-      break;
+      else {
+        
+        NSLog(@"error");
+      }
     }
-    
-    av_packet_unref(&packet);
   }
   
   av_packet_unref(&packet);
   
   av_free(_pVideoFrame);
+  
+  avcodec_close(_pVideoCodecCtx);
   
   return img;
 }
@@ -153,18 +185,35 @@ static CIContext *cicontext = nil;
   
   NSURL *url = [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] firstObject];
   
-  NSURL *imgurl = [url URLByAppendingPathComponent:@"abd.jpeg"];
+  NSString *fileName = [[_url.absoluteString stringByDeletingPathExtension] lastPathComponent];
+  
+  NSString *jpegfileName = [NSString stringWithFormat:@"thumbnail/%@.jepg", fileName];
+  
+  NSURL *imgurl = [url URLByAppendingPathComponent:jpegfileName];
   
   UIImage *uiimg = [UIImage imageWithCIImage:ciimage];
   
+  CIContext *context = [[self class] context];
+  
   dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
     
-    NSData *imageData = UIImageJPEGRepresentation(uiimg, 1);
+    NSDictionary *ops = @{(__bridge NSString*)kCGImageDestinationLossyCompressionQuality:@1.0};
+    
+    NSData *imageData = [context JPEGRepresentationOfImage:ciimage colorSpace:CGColorSpaceCreateDeviceRGB() options:ops];
+    
+    NSLog(@"%@", imgurl);
     
     [imageData writeToURL:imgurl atomically:YES];
   });
   
   return uiimg;
+}
+
+- (void)dealloc {
+  
+  avcodec_free_context(&_pVideoCodecCtx);
+  
+  avformat_close_input(&_pFormatCtx);
 }
 
 @end
