@@ -40,6 +40,8 @@ class PlayerViewController: UIViewController {
     view.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[playerView]|", options: [], metrics: nil, views: ["playerView" : playerView]))
     
     playProgress.addTarget(self, action: #selector(updatePlaybackPos(_:)), for: UIControl.Event.valueChanged)
+    
+    playProgress.value = 0
   }
   
   override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
@@ -51,12 +53,24 @@ class PlayerViewController: UIViewController {
     
     super.viewDidAppear(animated)
     
-    playerView.play()
+    playerView.play({ (time) in
+      
+      DispatchQueue.main.sync {
+        
+        self.playProgress.maximumValue = time
+      }
+    }) { (frameIndex) in
+      
+      DispatchQueue.main.async {
+        
+        self.playProgress.setValue(Float(frameIndex), animated: true)
+      }
+    }
   }
   
   @objc
   func updatePlaybackPos(_ sender:UISlider) -> Void {
     
-    
+//    print(sender.value)
   }
 }

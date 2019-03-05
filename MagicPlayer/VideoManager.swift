@@ -27,7 +27,7 @@ final class VideoManager: NSObject {
     
     frames.append(frame)
     
-    if frames.count >= 24 {
+    while frames.count >= 24 {
       
       condition.wait()
     }
@@ -41,7 +41,7 @@ final class VideoManager: NSObject {
     
     condition.lock()
     
-    if frames.isEmpty {
+    while frames.isEmpty {
       
       condition.wait()
     }
@@ -53,5 +53,14 @@ final class VideoManager: NSObject {
     condition.signal()
     
     return frame
+  }
+  
+  @objc func clearFrames() -> Void {
+    
+    condition.lock()
+    
+    frames.removeAll()
+    
+    condition.unlock()
   }
 }

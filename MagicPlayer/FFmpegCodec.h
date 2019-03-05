@@ -10,9 +10,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+typedef void(^LoadSucces)(float time);
+typedef void(^UpdateFrame)(NSInteger frame);
+
 @interface FFmpegCodec : NSObject
 
-- (void)openVideo:(NSURL*)url;
+- (void)openVideo:(NSURL*)url loadSuccess:(LoadSucces)locdSuccess onFrame:(UpdateFrame)everyFrame;
 
 @end
 

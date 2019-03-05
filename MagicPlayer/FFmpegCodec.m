@@ -30,6 +30,9 @@
 }
 
 @property(nonatomic) NSURL *url;
+@property(nonatomic) NSInteger seekTimeStamp;
+@property(nonatomic) int64_t totalTime;
+@property(nonatomic) NSInteger lastPts;
 
 @end
 
@@ -89,6 +92,8 @@ static void avStreamFPSTimeBase(AVStream *st, CGFloat defaultTimeBase, CGFloat *
     
     return;
   }
+  
+  _totalTime = _pFormatCtx->duration;
   
   AVCodecParameters *pVideoCodecParam = NULL;
   
@@ -185,21 +190,30 @@ static void avStreamFPSTimeBase(AVStream *st, CGFloat defaultTimeBase, CGFloat *
   avStreamFPSTimeBase(st, 0.025, 0, &_audioTimeBase);
 }
 
-- (void)openVideo:(NSURL *)url {
+- (void)openVideo:(NSURL*)url loadSuccess:(LoadSucces)loadSuccess onFrame:(UpdateFrame)everyFrameCallBack {
   
   self.url = url;
   
   [self prepare];
   
+  loadSuccess(_totalTime/AV_TIME_BASE);
+  
+  _seekTimeStamp = -1;
+  
   dispatch_queue_t queue = dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0);
   
   dispatch_async(queue, ^{
     
-    [self retriveFrame];
+    [self retriveFrame:everyFrameCallBack];
   });
 }
 
-- (void)retriveFrame {
+- (void)seekToFrame:(NSInteger)timeStamp {
+  
+  _seekTimeStamp = timeStamp;
+}
+
+- (void)retriveFrame:(UpdateFrame)everyFrameCallBack {
   
   NSInteger i = 0;
   
@@ -234,7 +248,25 @@ static void avStreamFPSTimeBase(AVStream *st, CGFloat defaultTimeBase, CGFloat *
       }
     }
     
+    NSInteger currentTime = packet.pts/1000;
+    
+    if (self.lastPts != currentTime) {
+      
+      everyFrameCallBack(currentTime);
+      
+      self.lastPts = currentTime;
+    }
+    
     av_packet_unref(&packet);
+    
+    if (_seekTimeStamp != -1) {
+      
+      av_seek_frame(_pFormatCtx, (int)_videoStream, _seekTimeStamp, AVSEEK_FLAG_BACKWARD);
+      
+      av_seek_frame(_pFormatCtx, (int)_audioStream, _seekTimeStamp, AVSEEK_FLAG_BACKWARD);
+      
+      _seekTimeStamp = -1;
+    }
   }
   
   av_free(_pVideoFrame);

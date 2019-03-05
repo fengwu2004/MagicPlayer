@@ -39,7 +39,7 @@ class VideoPlayerView: UIView {
     renderView.frame = self.frame
   }
   
-  func play() -> Void {
+  func play(_ loadSuccessBlock:@escaping (Float)->Void, updateProgress:@escaping (Int)->Void) -> Void {
     
     renderView.play()
     
@@ -47,7 +47,14 @@ class VideoPlayerView: UIView {
     
     DispatchQueue.global().async {
       
-       self.deocodec.openVideo(self.url)
+      self.deocodec.openVideo(self.url, loadSuccess: {(time:Float) in
+        
+        loadSuccessBlock(time)
+        
+      }, onFrame: {(frameIndex:Int) in
+        
+        updateProgress(frameIndex)
+      })
     }
   }
   

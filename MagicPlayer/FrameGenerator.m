@@ -121,8 +121,6 @@ static CIContext *cicontext = nil;
       
       avcodec_receive_frame(_pVideoCodecCtx, _pVideoFrame);
       
-      NSLog(@"%d", _pVideoCodecCtx->pix_fmt);
-      
       if ((_pVideoCodecCtx->pix_fmt == AV_PIX_FMT_YUV420P || _pVideoCodecCtx->pix_fmt == AV_PIX_FMT_YUVJ420P) && _pVideoCodecCtx->width != 0 && _pVideoCodecCtx->height != 0 && _pVideoFrame->data[0] != NULL) {
         
         @autoreleasepool {
